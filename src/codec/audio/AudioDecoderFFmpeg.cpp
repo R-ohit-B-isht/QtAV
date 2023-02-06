@@ -120,13 +120,15 @@ bool AudioDecoderFFmpeg::decode(const Packet &packet)
 #else
 	ret = avcodec_receive_frame(d.codec_ctx, d.frame);
 	if (ret == AVERROR(EAGAIN))
-            return false;
+            ;
 	else if (ret < 0) {
             qWarning("[AudioDecoder] %s", av_err2str(ret));
             return false;
 	}
 	got_frame_ptr = (ret == 0);
 	ret = avcodec_send_packet(d.codec_ctx, (AVPacket*)packet.asAVPacket());
+    if (ret == 0)
+        ret = packet.data.size();
 #endif
     }
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());

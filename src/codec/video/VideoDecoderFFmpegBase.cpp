@@ -148,12 +148,14 @@ bool VideoDecoderFFmpegBase::decode(const Packet &packet)
 	ret = avcodec_receive_frame(d.codec_ctx, d.frame);
 	got_frame_ptr = (ret == 0);
 	ret = avcodec_send_packet(d.codec_ctx, (AVPacket*)packet.asAVPacket());
+    if (ret == 0)
+        ret = packet.data.size();
 #endif
     }
     //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret < 0) {
-        //qWarning("[VideoDecoderFFmpegBase] %s", av_err2str(ret));
+        qWarning("[VideoDecoderFFmpegBase] %s", av_err2str(ret));
         return false;
     }
     if (!got_frame_ptr) {
