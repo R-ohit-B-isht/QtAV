@@ -28,6 +28,10 @@
 #include <QtCore/QObject>
 #include <QtCore/QScopedPointer>
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
 struct AVFormatContext;
 struct AVCodecContext;
 QT_BEGIN_NAMESPACE
@@ -151,9 +155,15 @@ public:
     int subtitleStream() const;
     QList<int> subtitleStreams() const;
     //codec. stream < 0: the stream going to play (or the stream set by setStreamIndex())
+#if LIBAVCODEC_VERSION_MAJOR < 59
     AVCodecContext* audioCodecContext(int stream = -1) const;
     AVCodecContext* videoCodecContext(int stream = -1) const;
     AVCodecContext* subtitleCodecContext(int stream = -1) const;
+#else
+    AVCodecParameters* audioCodecContext(int stream = -1) const;
+    AVCodecParameters* videoCodecContext(int stream = -1) const;
+    AVCodecParameters* subtitleCodecContext(int stream = -1) const;
+#endif
     /**
      * @brief getInterruptTimeout return the interrupt timeout
      */

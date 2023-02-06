@@ -192,7 +192,11 @@ public:
             if (!vd)
                 continue;
             decoder.reset(vd);
+#if LIBAVCODEC_VERSION_MAJOR < 59
             AVCodecContext *cctx = demuxer.videoCodecContext();
+#else
+            AVCodecParameters *cctx = demuxer.videoCodecContext();
+#endif
             if (cctx) decoder->setCodecContext(demuxer.videoCodecContext());
             if (!cctx || !decoder->open()) {
                 decoder.reset(0);

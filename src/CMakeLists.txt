@@ -438,7 +438,10 @@ if(HAVE_OPENSL)
   list(APPEND EXTRA_DEFS -DQTAV_HAVE_OPENSL=1)
   list(APPEND EXTRA_LIBS OpenSLES)
 endif()
-check_library_exists(va vaInitialize "" HAVE_VAAPI)
+#check_library_exists(va vaInitialize "" HAVE_VAAPI)
+# FIXME does VAAPI still need special attention or does
+# ffmpeg 5.0 take care of it by itself?
+set(HAVE_VAAPI OFF)
 if(HAVE_VAAPI)
   list(APPEND SOURCES
     vaapi/vaapi_helper.cpp
@@ -449,7 +452,9 @@ if(HAVE_VAAPI)
   list(APPEND EXTRA_LIBS va X11)
 endif()
 
-if(NOT APPLE)
+# FIXME at some point, this should be ported to ffmpeg 5.0
+# But for now... NaziVidia sucks anyway.
+if(NOT APPLE AND FALSE)
   list(APPEND EXTRA_DEFS -DQTAV_HAVE_CUDA=1)
   list(APPEND EXTRA_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/cuda)
   list(APPEND SOURCES

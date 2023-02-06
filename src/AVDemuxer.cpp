@@ -291,7 +291,7 @@ public:
     //copy the info, not parse the file when constructed, then need member vars
     QString file;
     QString file_orig;
-    AVInputFormat *input_format;
+    const AVInputFormat *input_format;
     QString format_forced;
     MediaIO *input;
 
@@ -311,7 +311,11 @@ public:
         // wanted_stream is REQUIRED. e.g. always set -1 to indicate the default stream, -2 to disable
         int stream, wanted_stream; // -1 default, selected by ff
         int index, wanted_index; // index in a kind of streams
+#if LIBAVCODEC_VERSION_MAJOR < 59
         AVCodecContext *avctx;
+#else
+	AVCodecParameters *avctx;
+#endif
     } StreamInfo;
     StreamInfo astream, vstream, sstream;
 
@@ -623,12 +627,14 @@ bool AVDemuxer::seek(qint64 pos)
     if (upos <= startTime()) {
         qDebug("************seek to beginning. started = false");
         d->started = false; //???
+#if LIBAVCODEC_VERSION_MAJOR < 59
         if (d->astream.avctx)
             d->astream.avctx->frame_number = 0;
         if (d->vstream.avctx)
             d->vstream.avctx->frame_number = 0; //TODO: why frame_number not changed after seek?
         if (d->sstream.avctx)
             d->sstream.avctx->frame_number = 0;
+#endif
     }
     return true;
 }
@@ -1071,37 +1077,61 @@ QList<int> AVDemuxer::subtitleStreams() const
     return d->subtitle_streams;
 }
 
+#if LIBAVCODEC_VERSION_MAJOR < 59
 AVCodecContext* AVDemuxer::audioCodecContext(int stream) const
+#else
+AVCodecParameters* AVDemuxer::audioCodecContext(int stream) const
+#endif
 {
     if (stream < 0)
         return d->astream.avctx;
     if (stream > (int)d->format_ctx->nb_streams)
         return 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
     AVCodecContext *avctx = d->format_ctx->streams[stream]->codec;
+#else
+    AVCodecParameters *avctx = d->format_ctx->streams[stream]->codecpar;
+#endif
     if (avctx->codec_type == AVMEDIA_TYPE_AUDIO)
         return avctx;
     return 0;
 }
 
+#if LIBAVCODEC_VERSION_MAJOR < 59
 AVCodecContext* AVDemuxer::videoCodecContext(int stream) const
+#else
+AVCodecParameters* AVDemuxer::videoCodecContext(int stream) const
+#endif
 {
     if (stream < 0)
         return d->vstream.avctx;
     if (stream > (int)d->format_ctx->nb_streams)
         return 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
     AVCodecContext *avctx = d->format_ctx->streams[stream]->codec;
+#else
+    AVCodecParameters *avctx = d->format_ctx->streams[stream]->codecpar;
+#endif
     if (avctx->codec_type == AVMEDIA_TYPE_VIDEO)
         return avctx;
     return 0;
 }
 
+#if LIBAVCODEC_VERSION_MAJOR < 59
 AVCodecContext* AVDemuxer::subtitleCodecContext(int stream) const
+#else
+AVCodecParameters* AVDemuxer::subtitleCodecContext(int stream) const
+#endif
 {
     if (stream < 0)
         return d->sstream.avctx;
     if (stream > (int)d->format_ctx->nb_streams)
         return 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
     AVCodecContext *avctx = d->format_ctx->streams[stream]->codec;
+#else
+    AVCodecParameters *avctx = d->format_ctx->streams[stream]->codecpar;
+#endif
     if (avctx->codec_type == AVMEDIA_TYPE_SUBTITLE)
         return avctx;
     return 0;
@@ -1298,7 +1328,11 @@ bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)
     // don't touch wanted index
     si->stream = s;
     si->wanted_stream = streamValue;
+#if LIBAVCODEC_VERSION_MAJOR < 59
     si->avctx = format_ctx->streams[s]->codec;
+#else
+    si->avctx = format_ctx->streams[s]->codecpar;
+#endif
     has_attached_pic = !!(format_ctx->streams[s]->disposition & AV_DISPOSITION_ATTACHED_PIC);
     return true;
 }
@@ -1311,7 +1345,11 @@ bool AVDemuxer::Private::prepareStreams()
         return false;
     AVMediaType type = AVMEDIA_TYPE_UNKNOWN;
     for (unsigned int i = 0; i < format_ctx->nb_streams; ++i) {
+#if LIBAVCODEC_VERSION_MAJOR < 59
         type = format_ctx->streams[i]->codec->codec_type;
+#else
+        type = format_ctx->streams[i]->codecpar->codec_type;
+#endif
         if (type == AVMEDIA_TYPE_VIDEO) {
             video_streams.push_back(i);
         } else if (type == AVMEDIA_TYPE_AUDIO) {

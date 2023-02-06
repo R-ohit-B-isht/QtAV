@@ -27,7 +27,7 @@
 
 namespace QtAV {
 
-static AVCodec* get_codec(const QString &name, const QString& hwa, AVCodecID cid)
+static const AVCodec* get_codec(const QString &name, const QString& hwa, AVCodecID cid)
 {
     QString fullname(name);
     if (name.isEmpty()) {
@@ -35,7 +35,7 @@ static AVCodec* get_codec(const QString &name, const QString& hwa, AVCodecID cid
             return avcodec_find_decoder(cid);
         fullname = QString("%1_%2").arg(avcodec_get_name(cid)).arg(hwa);
     }
-    AVCodec *codec = avcodec_find_decoder_by_name(fullname.toUtf8().constData());
+    const AVCodec *codec = avcodec_find_decoder_by_name(fullname.toUtf8().constData());
     if (codec)
         return codec;
     const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(fullname.toUtf8().constData());
@@ -76,7 +76,7 @@ bool AVDecoder::open()
         return false;
     }
     const QString hwa = property("hwaccel").toString();
-    AVCodec* codec = get_codec(codecName(), hwa, d.codec_ctx->codec_id);
+    const AVCodec* codec = get_codec(codecName(), hwa, d.codec_ctx->codec_id);
     if (!codec) { // TODO: can be null for none-ffmpeg based decoders
         QString es(tr("No codec could be found for '%1'"));
         if (d.codec_name.isEmpty()) {
@@ -153,6 +153,8 @@ void AVDecoder::flush()
     avcodec_flush_buffers(d_func().codec_ctx);
 }
 
+static QMap<AVCodecParameters*,AVCodecContext*> ccs;
+
 /*
  * do nothing if equal
  * close the old one. the codec context can not be shared in more than 1 decoder.
@@ -160,9 +162,17 @@ void AVDecoder::flush()
 void AVDecoder::setCodecContext(void *codecCtx)
 {
     DPTR_D(AVDecoder);
+#if LIBAVCODEC_VERSION_MAJOR < 59
     AVCodecContext *ctx = (AVCodecContext*)codecCtx;
-    if (d.codec_ctx == ctx)
+    if (d.codec_ctx == codecCtx)
         return;
+#else
+    AVCodecParameters *ctx = (AVCodecParameters*)codecCtx;
+    if(ccs.contains(ctx)) {
+        d.codec_ctx = ccs.value(ctx);
+	return;
+    }
+#endif
     if (isOpen()) {
         qWarning("Can not copy codec properties when it's open");
         close(); //
@@ -180,7 +190,12 @@ void AVDecoder::setCodecContext(void *codecCtx)
         qWarning("avcodec_alloc_context3 failed");
         return;
     }
+    ccs.insert(ctx, d.codec_ctx);
+#if LIBAVCODEC_VERSION_MAJOR < 59
     AV_ENSURE_OK(avcodec_copy_context(d.codec_ctx, ctx));
+#else
+    AV_ENSURE_OK(avcodec_parameters_to_context(d.codec_ctx, ctx));
+#endif
 }
 
 //TODO: reset other parameters?

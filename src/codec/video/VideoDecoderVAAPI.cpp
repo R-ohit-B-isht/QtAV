@@ -27,9 +27,11 @@
 #include <QtCore/QMetaEnum>
 #include <QtCore/QStringList>
 #include <QtCore/QThread>
+#if LIBAVCODEC_VERSION_MAJOR < 59
 extern "C" {
 #include <libavcodec/vaapi.h>
 }
+#endif
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
 #include "vaapi/SurfaceInteropVAAPI.h"
@@ -84,7 +86,7 @@ FACTORY_REGISTER(VideoDecoder, VAAPI, "VAAPI")
 
 const char* getProfileName(AVCodecID id, int profile)
 {
-    AVCodec *c = avcodec_find_decoder(id);
+    const AVCodec *c = avcodec_find_decoder(id);
     if (!c)
         return "Unknow";
     return av_get_profile_name(c, profile);

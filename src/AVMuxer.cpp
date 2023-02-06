@@ -81,7 +81,7 @@ public:
     //copy the info, not parse the file when constructed, then need member vars
     QString file;
     QString file_orig;
-    AVOutputFormat *format;
+    const AVOutputFormat *format;
     QString format_forced;
     MediaIO *io;
 
@@ -94,7 +94,7 @@ public:
 
 AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codecName, AVCodecID codecId)
 {
-    AVCodec *codec = NULL;
+    const AVCodec *codec = NULL;
     if (!codecName.isEmpty()) {
         codec = avcodec_find_encoder_by_name(codecName.toUtf8().constData());
         if (!codec) {
@@ -120,7 +120,8 @@ AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codec
     // set by avformat if unset
     s->id = ctx->nb_streams - 1;
     s->time_base = kTB;
-    AVCodecContext *c = s->codec;
+#if LIBAVCODEC_VERSION_MAJOR < 59
+    AVCodec *c = s->codec;
     c->codec_id = codec->id;
     // Using codec->time_base is deprecated, but needed for older lavf.
     c->time_base = s->time_base;
@@ -129,6 +130,7 @@ AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codec
         c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     // expose avctx to encoder and set properties in encoder?
     // list codecs for a given format in ui
+#endif
     return s;
 }
 
@@ -137,16 +139,24 @@ bool AVMuxer::Private::prepareStreams()
     audio_streams.clear();
     video_streams.clear();
     subtitle_streams.clear();
-    AVOutputFormat* fmt = format_ctx->oformat;
+    const AVOutputFormat* fmt = format_ctx->oformat;
     if (venc) {
         AVStream *s = addStream(format_ctx, venc->codecName(), fmt->video_codec);
         if (s) {
+#if LIBAVCODEC_VERSION_MAJOR < 59
             AVCodecContext *c = s->codec;
+#else
+            AVCodecParameters *c = s->codecpar;
+#endif
             c->bit_rate = venc->bitRate();
             c->width = venc->width();
             c->height = venc->height();
             /// MUST set after encoder is open to ensure format is valid and the same
+#if LIBAVCODEC_VERSION_MAJOR < 59
             c->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(venc->pixelFormat());
+#else
+            c->format = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(venc->pixelFormat());
+#endif
 
             // Set avg_frame_rate based on encoder frame_rate
             s->avg_frame_rate = av_d2q(venc->frameRate(), venc->frameRate()*1001.0+2);
@@ -157,11 +167,19 @@ bool AVMuxer::Private::prepareStreams()
     if (aenc) {
         AVStream *s = addStream(format_ctx, aenc->codecName(), fmt->audio_codec);
         if (s) {
+#if LIBAVCODEC_VERSION_MAJOR < 59
             AVCodecContext *c = s->codec;
+#else
+            AVCodecParameters *c = s->codecpar;
+#endif
             c->bit_rate = aenc->bitRate();
             /// MUST set after encoder is open to ensure format is valid and the same
             c->sample_rate = aenc->audioFormat().sampleRate();
+#if LIBAVCODEC_VERSION_MAJOR < 59
             c->sample_fmt = (AVSampleFormat)aenc->audioFormat().sampleFormatFFmpeg();
+#else
+            c->format = (AVSampleFormat)aenc->audioFormat().sampleFormatFFmpeg();
+#endif
             c->channel_layout = aenc->audioFormat().channelLayoutFFmpeg();
             c->channels = aenc->audioFormat().channels();
             c->bits_per_raw_sample = aenc->audioFormat().bytesPerSample()*8; // need??

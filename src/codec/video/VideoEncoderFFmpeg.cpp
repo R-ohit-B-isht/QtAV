@@ -116,11 +116,11 @@ bool VideoEncoderFFmpegPrivate::open()
     nb_encoded = 0LL;
     if (codec_name.isEmpty()) {
         // copy ctx from muxer by copyAVCodecContext
-        AVCodec *codec = avcodec_find_encoder(avctx->codec_id);
+        const AVCodec *codec = avcodec_find_encoder(avctx->codec_id);
         AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
         return true;
     }
-    AVCodec *codec = avcodec_find_encoder_by_name(codec_name.toUtf8().constData());
+    const AVCodec *codec = avcodec_find_encoder_by_name(codec_name.toUtf8().constData());
     if (!codec) {
         const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(codec_name.toUtf8().constData());
         if (cd) {
@@ -247,7 +247,7 @@ bool VideoEncoderFFmpegPrivate::open()
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
     // from mpv ao_lavc
-    const int buffer_size = qMax<int>(qMax<int>(width*height*6+200, AV_INPUT_BUFFER_MIN_SIZE), sizeof(AVPicture));//??
+    const int buffer_size = qMax<int>(qMax<int>(width*height*6+200, AV_INPUT_BUFFER_MIN_SIZE), av_image_get_buffer_size(avctx->pix_fmt, avctx->width, avctx->height, 1));//??
     buffer.resize(buffer_size);
     return true;
 }
@@ -373,7 +373,13 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
     pkt.data = (uint8_t*)d.buffer.constData();
     pkt.size = d.buffer.size();
     int got_packet = 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
     int ret = avcodec_encode_video2(d.avctx, &pkt, f.data(), &got_packet);
+#else
+    int ret = avcodec_send_frame(d.avctx, f.data());
+    got_packet = (ret == 0);
+    ret = avcodec_receive_packet(d.avctx, &pkt);
+#endif
     if (ret < 0) {
         qWarning("error avcodec_encode_video2: %s" ,av_err2str(ret));
         return false; //false

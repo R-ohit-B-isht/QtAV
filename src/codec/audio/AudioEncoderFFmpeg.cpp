@@ -54,7 +54,9 @@ public:
     AudioEncoderFFmpegPrivate()
         : AudioEncoderPrivate()
     {
+#if LIBAVCODEC_VERSION_MAJOR < 59
         avcodec_register_all();
+#endif
         // NULL: codec-specific defaults won't be initialized, which may result in suboptimal default settings (this is important mainly for encoders, e.g. libx264).
         avctx = avcodec_alloc_context3(NULL);
     }
@@ -68,11 +70,11 @@ bool AudioEncoderFFmpegPrivate::open()
 {
     if (codec_name.isEmpty()) {
         // copy ctx from muxer by copyAVCodecContext
-        AVCodec *codec = avcodec_find_encoder(avctx->codec_id);
+        const AVCodec *codec = avcodec_find_encoder(avctx->codec_id);
         AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
         return true;
     }
-    AVCodec *codec = avcodec_find_encoder_by_name(codec_name.toUtf8().constData());
+    const AVCodec *codec = avcodec_find_encoder_by_name(codec_name.toUtf8().constData());
     if (!codec) {
         const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(codec_name.toUtf8().constData());
         if (cd) {
@@ -204,7 +206,13 @@ bool AudioEncoderFFmpeg::encode(const AudioFrame &frame)
     pkt.data = (uint8_t*)d.buffer.constData(); //NULL
     pkt.size = d.buffer.size(); //0
     int got_packet = 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
     int ret = avcodec_encode_audio2(d.avctx, &pkt, f, &got_packet);
+#else
+    int ret = avcodec_send_frame(d.avctx, f);
+    got_packet = (ret == 0);
+    ret = avcodec_receive_packet(d.avctx, &pkt);
+#endif
     av_frame_free(&f);
     if (ret < 0) {
         //qWarning("error avcodec_encode_audio2: %s" ,av_err2str(ret));

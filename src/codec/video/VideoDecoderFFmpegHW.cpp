@@ -328,7 +328,11 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
         // TODO: buffer pool and create VideoFrame when needed to avoid copy? also for other va
         frame = frame.clone();
     }
+#if LIBAVCODEC_VERSION_MAJOR < 59
     frame.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+#else
+    frame.setTimestamp(double(d.frame->pts)/1000.0);
+#endif
     frame.setDisplayAspectRatio(d.getDAR(d.frame));
     d.updateColorDetails(&frame);
     return frame;

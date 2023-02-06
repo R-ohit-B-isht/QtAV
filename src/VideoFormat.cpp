@@ -702,7 +702,11 @@ bool VideoFormat::hasPalette() const
 
 bool VideoFormat::isPseudoPaletted() const
 {
+#if LIBAVCODEC_VERSION_MAJOR < 59
     return (d->flags() & AV_PIX_FMT_FLAG_PSEUDOPAL) == AV_PIX_FMT_FLAG_PSEUDOPAL;
+#else
+    return hasPalette();
+#endif
 }
 
 bool VideoFormat::isBitStream() const

@@ -100,10 +100,34 @@ bool AudioDecoderFFmpeg::decode(const Packet &packet)
         av_init_packet(&eofpkt);
         eofpkt.data = NULL;
         eofpkt.size = 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
         ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, &eofpkt);
+#else
+	ret = avcodec_receive_frame(d.codec_ctx, d.frame);
+	if (ret == AVERROR(EAGAIN))
+            return false;
+	else if (ret < 0) {
+            qWarning("[AudioDecoder] %s", av_err2str(ret));
+            return false;
+	}
+	got_frame_ptr = (ret == 0);
+	ret = avcodec_send_packet(d.codec_ctx, &eofpkt);
+#endif
     } else {
     // const AVPacket*: ffmpeg >= 1.0. no libav
+#if LIBAVCODEC_VERSION_MAJOR < 59
         ret = avcodec_decode_audio4(d.codec_ctx, d.frame, &got_frame_ptr, (AVPacket*)packet.asAVPacket());
+#else
+	ret = avcodec_receive_frame(d.codec_ctx, d.frame);
+	if (ret == AVERROR(EAGAIN))
+            return false;
+	else if (ret < 0) {
+            qWarning("[AudioDecoder] %s", av_err2str(ret));
+            return false;
+	}
+	got_frame_ptr = (ret == 0);
+	ret = avcodec_send_packet(d.codec_ctx, (AVPacket*)packet.asAVPacket());
+#endif
     }
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret == AVERROR(EAGAIN)) {
@@ -145,7 +169,11 @@ AudioFrame AudioDecoderFFmpeg::frame()
     f.setBytesPerLine(d.frame->linesize[0], 0); // for correct alignment
     f.setSamplesPerChannel(d.frame->nb_samples);
     // TODO: ffplay check AVFrame.pts, pkt_pts, last_pts+nb_samples. move to AudioFrame::from(AVFrame*)
+#if LIBAVCODEC_VERSION_MAJOR < 59
     f.setTimestamp((double)d.frame->pkt_pts/1000.0);
+#else
+    f.setTimestamp((double)d.frame->pts/1000.0);
+#endif
     f.setAudioResampler(d.resampler); // TODO: remove. it's not safe if frame is shared. use a pool or detach if ref >1
     return f;
 }

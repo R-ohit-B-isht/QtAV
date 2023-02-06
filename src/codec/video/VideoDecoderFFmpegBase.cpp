@@ -30,12 +30,21 @@ extern ColorRange colorRangeFromFFmpeg(AVColorRange cr);
 
 static void SetColorDetailsByFFmpeg(VideoFrame *f, AVFrame* frame, AVCodecContext* codec_ctx)
 {
+#if LIBAVCODEC_VERSION_MAJOR < 59
     ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(frame));
     if (cs == ColorSpace_Unknown)
+#else
+    ColorSpace
+#endif
         cs = colorSpaceFromFFmpeg(codec_ctx->colorspace);
     f->setColorSpace(cs);
+#if LIBAVCODEC_VERSION_MAJOR < 59
     ColorRange cr = colorRangeFromFFmpeg(av_frame_get_color_range(frame));
     if (cr == ColorRange_Unknown) {
+#else
+    ColorRange cr;
+    if (1) {
+#endif
         // check yuvj format. TODO: deprecated, check only for old ffmpeg?
         const AVPixelFormat pixfmt = (AVPixelFormat)frame->format;
         switch (pixfmt) {
@@ -125,9 +134,21 @@ bool VideoDecoderFFmpegBase::decode(const Packet &packet)
         av_init_packet(&eofpkt);
         eofpkt.data = NULL;
         eofpkt.size = 0;
+#if LIBAVCODEC_VERSION_MAJOR < 59
         ret = avcodec_decode_video2(d.codec_ctx, d.frame, &got_frame_ptr, &eofpkt);
+#else
+	ret = avcodec_receive_frame(d.codec_ctx, d.frame);
+	got_frame_ptr = (ret == 0);
+	ret = avcodec_send_packet(d.codec_ctx, &eofpkt);
+#endif
     } else {
+#if LIBAVCODEC_VERSION_MAJOR < 59
         ret = avcodec_decode_video2(d.codec_ctx, d.frame, &got_frame_ptr, (AVPacket*)packet.asAVPacket());
+#else
+	ret = avcodec_receive_frame(d.codec_ctx, d.frame);
+	got_frame_ptr = (ret == 0);
+	ret = avcodec_send_packet(d.codec_ctx, (AVPacket*)packet.asAVPacket());
+#endif
     }
     //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
@@ -159,7 +180,11 @@ VideoFrame VideoDecoderFFmpegBase::frame()
     frame.setBits(d.frame->data);
     frame.setBytesPerLine(d.frame->linesize);
     // in s. TODO: what about AVFrame.pts? av_frame_get_best_effort_timestamp? move to VideoFrame::from(AVFrame*)
+#if LIBAVCODEC_VERSION_MAJOR < 59
     frame.setTimestamp((double)d.frame->pkt_pts/1000.0);
+#else
+    frame.setTimestamp((double)d.frame->pts/1000.0);
+#endif
     frame.setMetaData(QStringLiteral("avbuf"), QVariant::fromValue(AVFrameBuffersRef(new AVFrameBuffers(d.frame))));
     d.updateColorDetails(&frame);
     if (frame.format().hasPalette()) {

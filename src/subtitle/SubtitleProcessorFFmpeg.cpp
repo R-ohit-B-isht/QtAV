@@ -250,7 +250,7 @@ bool SubtitleProcessorFFmpeg::processHeader(const QByteArray &codec, const QByte
     if (codec_ctx) {
         avcodec_free_context(&codec_ctx);
     }
-    AVCodec *c = avcodec_find_decoder_by_name(codec.constData());
+    const AVCodec *c = avcodec_find_decoder_by_name(codec.constData());
     if (!c) {
         qDebug("subtitle avcodec_descriptor_get_by_name %s", codec.constData());
         const AVCodecDescriptor *desc = avcodec_descriptor_get_by_name(codec.constData());
@@ -371,8 +371,15 @@ bool SubtitleProcessorFFmpeg::processSubtitle()
         qWarning("no subtitle stream found");
         return false;
     }
+#if LIBAVCODEC_VERSION_MAJOR < 59
     codec_ctx = m_reader.subtitleCodecContext();
-    AVCodec *dec = avcodec_find_decoder(codec_ctx->codec_id);
+    const AVCodec *dec = avcodec_find_decoder(codec_ctx->codec_id);
+#else
+    AVCodecParameters *par = m_reader.subtitleCodecContext();
+    const AVCodec *dec = avcodec_find_decoder(par->codec_id);
+    codec_ctx = avcodec_alloc_context3(dec);
+    avcodec_parameters_to_context(codec_ctx, par);
+#endif
     const AVCodecDescriptor *dec_desc = avcodec_descriptor_get(codec_ctx->codec_id);
     if (!dec) {
         if (dec_desc)

@@ -29,6 +29,10 @@
 #include "AVDemuxThread.h"
 #include "utils/Logger.h"
 
+extern "C" {
+#include <libavcodec/avcodec.h>
+}
+
 namespace QtAV {
 
 static const qint64 kInvalidPosition = std::numeric_limits<qint64>::max();
@@ -43,7 +47,11 @@ public:
     void applyFrameRate();
     void initStatistics();
     void initBaseStatistics();
+#if LIBAVCODEC_VERSION_MAJOR < 59
     void initCommonStatistics(int s, Statistics::Common* st, AVCodecContext* avctx);
+#else
+    void initCommonStatistics(int s, Statistics::Common* st, AVCodecParameters* avctx);
+#endif
     void initAudioStatistics(int s);
     void initVideoStatistics(int s);
     void initSubtitleStatistics(int s);

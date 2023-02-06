@@ -244,7 +244,7 @@ config_pulseaudio {
     DEFINES *= QTAV_HAVE_PULSEAUDIO=1
     LIBS += -lpulse
 }
-CONFIG += config_cuda
+!no-cuda: CONFIG *= config_cuda
 #CONFIG += config_cuda_link
 config_cuda {
     DEFINES += QTAV_HAVE_CUDA=1
@@ -287,7 +287,7 @@ config_d3d11va {
   }
   winrt: LIBS *= -ld3d11
 }
-win32:!winrt {
+win32:!winrt:d3dva {
   HEADERS += directx/SurfaceInteropD3D9.h
   SOURCES += directx/SurfaceInteropD3D9.cpp
   enable_egl {

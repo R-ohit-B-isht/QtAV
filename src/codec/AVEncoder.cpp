@@ -146,7 +146,13 @@ void AVEncoder::copyAVCodecContext(void* ctx)
     AVCodecContext* c = static_cast<AVCodecContext*>(ctx);
     if (d.avctx) {
         // dest should be avcodec_alloc_context3(NULL)
+#if LIBAVCODEC_VERSION_MAJOR < 59
         AV_ENSURE_OK(avcodec_copy_context(d.avctx, c));
+#else
+        AVCodecParameters *par;
+        avcodec_parameters_from_context(par, c);
+        AV_ENSURE_OK(avcodec_parameters_to_context(d.avctx, par));
+#endif
         d.is_open = false;
         return;
     }
