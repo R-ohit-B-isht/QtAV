@@ -8,13 +8,14 @@ SUBDIRS = common
     sharedoutput \
     simpletranscode \
     simpleplayer \
-    player \
     filters \
     framereader \
-    videocapture \
+    videocapture
+lessThan(QT_MAJOR_VERSION,6): SUBDIRS += \
+    videowall \
     videographicsitem \
-    videogroup \
-    videowall
+    player \
+    videogroup
 contains(QT_CONFIG, opengl): SUBDIRS += \
     shader \
     glslfilter
@@ -30,12 +31,12 @@ contains(QT_CONFIG, opengl): SUBDIRS += \
 }
 
 greaterThan(QT_MAJOR_VERSION, 4) {
-  isEqual(QT_MAJOR_VERSION,5):greaterThan(QT_MINOR_VERSION,3)|greaterThan(QT_MAJOR_VERSION,5) {
+  isEqual(QT_MAJOR_VERSION,5):greaterThan(QT_MINOR_VERSION,3) {
     contains(QT_CONFIG, opengl):!winrt:!ios:!android: SUBDIRS += window
   }
   # qtHaveModule does not exist in Qt5.0
   isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
-    SUBDIRS += QMLPlayer
+    lessThan(QT_MAJOR_VERSION,6): SUBDIRS += QMLPlayer
     QMLPlayer.depends += common
     sdk_build: SUBDIRS *= QMLPlayer/QMLPlayer_sdk.pro
   }

@@ -23,6 +23,9 @@
 
 #if !defined(QT_NO_OPENGL) && QT_VERSION < QT_VERSION_CHECK(6,0,0)
 #include <QtOpenGL/QGLWidget>
+#elif !defined(QT_NO_OPENGL)
+#include <QtOpenGLWidgets/QOpenGLWidget>
+typedef QOpenGLWidget QGLWidget;
 #endif
 
 #include <QCheckBox>
