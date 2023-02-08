@@ -122,9 +122,14 @@ private:
     bool onSetSaturation(qreal s) Q_DECL_OVERRIDE;
     void updateRenderRect();
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+typedef int list_size_t;
+#else
+typedef qsizetype list_size_t;
+#endif
     static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);
-    static int vf_count(QQmlListProperty<QuickVideoFilter> *property);
-    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, int index);
+    static list_size_t vf_count(QQmlListProperty<QuickVideoFilter> *property);
+    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, list_size_t index);
     static void vf_clear(QQmlListProperty<QuickVideoFilter> *property);
 };
 typedef QuickFBORenderer VideoRendererQuickFBO;

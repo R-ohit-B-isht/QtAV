@@ -153,9 +153,22 @@ bool QuickSubtitleItem::event(QEvent *e)
     return true;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+
 void QuickSubtitleItem::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     QQuickItem::geometryChanged(newGeometry, oldGeometry); //geometry will be updated
     m_remap = true;
     QCoreApplication::postEvent(this, new QEvent(QEvent::User));
 }
+
+#else
+
+void QuickSubtitleItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    QQuickItem::geometryChange(newGeometry, oldGeometry); //geometry will be updated
+    m_remap = true;
+    QCoreApplication::postEvent(this, new QEvent(QEvent::User));
+}
+
+#endif

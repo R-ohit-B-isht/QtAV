@@ -77,8 +77,6 @@ QMAKE_TARGET_PRODUCT = "QtAV QML"
 
 SOURCES += \
     plugin.cpp \
-    QQuickItemRenderer.cpp \
-    SGVideoNode.cpp \
     QmlAVPlayer.cpp \
     QuickFilter.cpp \
     QuickSubtitle.cpp \
@@ -91,13 +89,23 @@ HEADERS += \
     QmlAV/QuickSubtitleItem.h \
     QmlAV/QuickVideoPreview.h
 
+lessThan(QT_MAJOR_VERSION,6): {
+    SOURCES += \
+        QQuickItemRenderer.cpp \
+        SGVideoNode.cpp \
+}
+
 SDK_HEADERS += \
     QmlAV/Export.h \
     QmlAV/MediaMetaData.h \
-    QmlAV/SGVideoNode.h \
-    QmlAV/QQuickItemRenderer.h \
     QmlAV/QuickFilter.h \
     QmlAV/QmlAVPlayer.h
+
+lessThan(QT_MAJOR_VERSION,6): {
+    SDK_HEADERS += \
+        QmlAV/SGVideoNode.h \
+        QmlAV/QQuickItemRenderer.h
+}
 
 HEADERS *= \
     $$SDK_HEADERS

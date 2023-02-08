@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
@@ -538,13 +538,13 @@ void QmlAVPlayer::af_append(QQmlListProperty<QuickAudioFilter> *property, QuickA
         self->mpPlayer->installFilter(value);
 }
 
-int QmlAVPlayer::af_count(QQmlListProperty<QuickAudioFilter> *property)
+QmlAVPlayer::list_size_t QmlAVPlayer::af_count(QQmlListProperty<QuickAudioFilter> *property)
 {
     QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
     return self->m_afilters.size();
 }
 
-QuickAudioFilter* QmlAVPlayer::af_at(QQmlListProperty<QuickAudioFilter> *property, int index)
+QuickAudioFilter* QmlAVPlayer::af_at(QQmlListProperty<QuickAudioFilter> *property, list_size_t index)
 {
     QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
     return self->m_afilters.at(index);
@@ -569,13 +569,13 @@ void QmlAVPlayer::vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickV
         self->mpPlayer->installFilter(value);
 }
 
-int QmlAVPlayer::vf_count(QQmlListProperty<QuickVideoFilter> *property)
+QmlAVPlayer::list_size_t QmlAVPlayer::vf_count(QQmlListProperty<QuickVideoFilter> *property)
 {
     QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
     return self->m_vfilters.size();
 }
 
-QuickVideoFilter* QmlAVPlayer::vf_at(QQmlListProperty<QuickVideoFilter> *property, int index)
+QuickVideoFilter* QmlAVPlayer::vf_at(QQmlListProperty<QuickVideoFilter> *property, list_size_t index)
 {
     QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
     return self->m_vfilters.at(index);

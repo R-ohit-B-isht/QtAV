@@ -95,11 +95,11 @@ bool AVThread::installFilter(Filter *filter, int index, bool lock)
         return true;
     if (lock) {
         QMutexLocker locker(&d.mutex);
-        if (p >= 0)
+        if (p >= 0 && p < d.filters.size())
             d.filters.removeAt(p);
         d.filters.insert(p, filter);
     } else {
-        if (p >= 0)
+        if (p >= 0 && p < d.filters.size())
             d.filters.removeAt(p);
         d.filters.insert(p, filter);
     }

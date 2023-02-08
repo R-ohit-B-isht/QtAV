@@ -69,7 +69,7 @@ bool FilterManager::insert(Filter *filter, QList<Filter *> &filters, int pos)
     // already installed at desired position
     if (p == index)
         return false;
-    if (p >= 0)
+    if (p >= 0 && p < filters.size())
         filters.removeAt(p);
     filters.insert(p, filter);
     return true;

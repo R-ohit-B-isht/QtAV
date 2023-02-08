@@ -97,8 +97,11 @@ Q_SIGNALS:
     void backgroundColorChanged() Q_DECL_OVERRIDE;
 protected:
     bool event(QEvent *e) Q_DECL_OVERRIDE;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) Q_DECL_OVERRIDE;
-
+#else
+    void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) Q_DECL_OVERRIDE;
+#endif
     bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
     void drawFrame() Q_DECL_OVERRIDE;
     // QQuickItem interface

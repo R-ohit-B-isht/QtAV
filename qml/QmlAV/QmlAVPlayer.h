@@ -1,4 +1,4 @@
-﻿/******************************************************************************
+/******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
@@ -357,13 +357,19 @@ private Q_SLOTS:
     void applyChannelLayout();
 
 private:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+typedef int list_size_t;
+#else
+typedef qsizetype list_size_t;
+#endif
+
     static void af_append(QQmlListProperty<QuickAudioFilter> *property, QuickAudioFilter *value);
-    static int af_count(QQmlListProperty<QuickAudioFilter> *property);
-    static QuickAudioFilter *af_at(QQmlListProperty<QuickAudioFilter> *property, int index);
+    static list_size_t af_count(QQmlListProperty<QuickAudioFilter> *property);
+    static QuickAudioFilter *af_at(QQmlListProperty<QuickAudioFilter> *property, list_size_t index);
     static void af_clear(QQmlListProperty<QuickAudioFilter> *property);
     static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);
-    static int vf_count(QQmlListProperty<QuickVideoFilter> *property);
-    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, int index);
+    static list_size_t vf_count(QQmlListProperty<QuickVideoFilter> *property);
+    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, list_size_t index);
     static void vf_clear(QQmlListProperty<QuickVideoFilter> *property);
 
     Q_DISABLE_COPY(QmlAVPlayer)

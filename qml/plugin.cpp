@@ -51,7 +51,9 @@ public:
     void registerTypes(const char *uri)
     {
         Q_ASSERT(QLatin1String(uri) == QLatin1String("QtAV"));
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         qmlRegisterType<QQuickItemRenderer>(uri, 1, 3, "VideoOutput");
+#endif
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "AVPlayer");
         qmlRegisterType<QmlAVPlayer>(uri, 1, 3, "MediaPlayer");
         qmlRegisterType<QuickSubtitle>(uri, 1, 4, "Subtitle");
@@ -60,8 +62,8 @@ public:
 #if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
         qmlRegisterType<QuickFBORenderer>(uri, 1, 5, "VideoOutput2");
 #endif
-        qmlRegisterUncreatableType<VideoCapture>(uri, 1, 6, "VideoCapture", trUtf8("VideoCapture is provided by MediaPlayer"));
-        qmlRegisterType<MediaMetaData>();
+        qmlRegisterUncreatableType<VideoCapture>(uri, 1, 6, "VideoCapture", tr("VideoCapture is provided by MediaPlayer").toUtf8());
+        qmlRegisterType<MediaMetaData>(uri, 1, 5, "MediaMetaData");
 
         // FIXME: if version is 2.x, some qtav types will be undefined, why?
         // 1.7
