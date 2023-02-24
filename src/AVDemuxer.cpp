@@ -436,6 +436,13 @@ const QStringList &AVDemuxer::supportedProtocols()
     return protocols;
 }
 
+static QMap<QString, AVInputFormat*> gCustomsFormats;
+
+void AVDemuxer::registerCustomFormat(const QString &format, AVInputFormat &input_format)
+{
+    gCustomsFormats[format] = &input_format;
+}
+
 MediaStatus AVDemuxer::mediaStatus() const
 {
     return d->media_status;
@@ -705,6 +712,8 @@ bool AVDemuxer::setMedia(const QString &fileName)
         d->input = MediaIO::createForProtocol(scheme);
         if (d->input) {
             d->input->setUrl(d->file);
+        } else if (gCustomsFormats.contains(scheme)) {
+            d->format_forced = scheme;
         }
     }
     return d->media_changed;
@@ -801,7 +810,9 @@ bool AVDemuxer::load()
     // check special dict keys
     // d->format_forced can be set from AVFormatContext.format_whitelist
     if (!d->format_forced.isEmpty()) {
-        d->input_format = av_find_input_format(d->format_forced.toUtf8().constData());
+        d->input_format = gCustomsFormats.value(d->format_forced);
+        if (d->input_format == nullptr)
+            d->input_format = av_find_input_format(d->format_forced.toUtf8().constData());
         qDebug() << "force format: " << d->format_forced;
     }
     int ret = 0;

@@ -34,6 +34,7 @@ extern "C" {
 
 struct AVFormatContext;
 struct AVCodecContext;
+struct AVInputFormat;
 QT_BEGIN_NAMESPACE
 class QIODevice;
 QT_END_NAMESPACE
@@ -54,6 +55,7 @@ public:
     static const QStringList& supportedExtensions();
     /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
+    static void registerCustomFormat(QString const & format, AVInputFormat & input_format);
 
     AVDemuxer(QObject *parent = 0);
     ~AVDemuxer();
