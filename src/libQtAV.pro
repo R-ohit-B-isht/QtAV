@@ -100,7 +100,16 @@ win32 {
     !static:QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
 }
 capi {
-contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+contains(QT_CONFIG, egl)|contains(QT_CONFIG, opengles2) {
+  CONFIG *= enable_egl
+  !ios {
+    winrt: DEFINES += CAPI_LINK_EGL #required by capi_egl.*
+    DEFINES += QTAV_HAVE_EGL_CAPI=1
+    HEADERS *= capi/egl_api.h
+    SOURCES *= capi/egl_api.cpp
+  }
+}
+lessThan(QT_MAJOR_VERSION,6): contains(QT_CONFIG, dynamicgl) {
   CONFIG *= enable_egl
   !ios {
     winrt: DEFINES += CAPI_LINK_EGL #required by capi_egl.*
